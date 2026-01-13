@@ -18,8 +18,31 @@ import DocumentsManager from "./components/DocumentsManager"
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<string>("overview")
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [stats, setStats] = useState<any>(null)
+  const [loadingStats, setLoadingStats] = useState(true)
   const router = useRouter()
   const { config } = useConfig()
+
+  useEffect(() => {
+    if (activeTab === "overview") {
+      loadStats()
+    }
+  }, [activeTab])
+
+  const loadStats = async () => {
+    try {
+      setLoadingStats(true)
+      const response = await fetch('/api/admin/stats')
+      const data = await response.json()
+      if (data.success) {
+        setStats(data.stats)
+      }
+    } catch (error) {
+      console.error('Error cargando estadísticas:', error)
+    } finally {
+      setLoadingStats(false)
+    }
+  }
 
   const handleLogout = async () => {
     try {
@@ -148,34 +171,78 @@ export default function AdminDashboard() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <StatsCard
-                title="Visitas Totales"
-                value="15,234"
-                change="+12.5%"
-                trend="up"
-                icon="chart"
-              />
-              <StatsCard
-                title="Solicitudes de Info"
-                value="342"
-                change="+8.2%"
-                trend="up"
-                icon="mail"
-              />
-              <StatsCard
-                title="Banners Activos"
-                value="3"
-                change="0%"
-                trend="neutral"
-                icon="image"
-              />
-              <StatsCard
-                title="Tasa de Conversión"
-                value="2.4%"
-                change="+0.3%"
-                trend="up"
-                icon="percent"
-              />
+              {loadingStats ? (
+                <>
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse">
+                      <div className="h-12 bg-gray-200 rounded mb-4"></div>
+                      <div className="h-8 bg-gray-200 rounded"></div>
+                    </div>
+                  ))}
+                </>
+              ) : stats ? (
+                <>
+                  <StatsCard
+                    title="Visitas Totales"
+                    value={stats.visits.total.toLocaleString()}
+                    change={stats.visits.change}
+                    trend={stats.visits.trend}
+                    icon="chart"
+                  />
+                  <StatsCard
+                    title="Solicitudes de Info"
+                    value={stats.requests.total.toLocaleString()}
+                    change={stats.requests.change}
+                    trend={stats.requests.trend}
+                    icon="mail"
+                  />
+                  <StatsCard
+                    title="Banners Activos"
+                    value={stats.banners.total.toString()}
+                    change={stats.banners.change}
+                    trend={stats.banners.trend}
+                    icon="image"
+                  />
+                  <StatsCard
+                    title="Tasa de Conversión"
+                    value={stats.conversion.rate}
+                    change={stats.conversion.change}
+                    trend={stats.conversion.trend}
+                    icon="percent"
+                  />
+                </>
+              ) : (
+                <>
+                  <StatsCard
+                    title="Visitas Totales"
+                    value="0"
+                    change="0%"
+                    trend="neutral"
+                    icon="chart"
+                  />
+                  <StatsCard
+                    title="Solicitudes de Info"
+                    value="0"
+                    change="0%"
+                    trend="neutral"
+                    icon="mail"
+                  />
+                  <StatsCard
+                    title="Banners Activos"
+                    value="0"
+                    change="0%"
+                    trend="neutral"
+                    icon="image"
+                  />
+                  <StatsCard
+                    title="Tasa de Conversión"
+                    value="0%"
+                    change="0%"
+                    trend="neutral"
+                    icon="percent"
+                  />
+                </>
+              )}
             </div>
 
             {/* Main Grid */}
@@ -184,7 +251,7 @@ export default function AdminDashboard() {
                 <VisitsChart />
               </div>
               <div>
-                <QuickActions />
+                <QuickActions onTabChange={setActiveTab} />
               </div>
             </div>
           </div>

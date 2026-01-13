@@ -353,25 +353,28 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-xl border-b border-gray-200/50">
-        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
+        <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group min-w-0">
             {config?.logo ? (
               <img 
                 src={config.logo} 
                 alt={config.siteName || "Logo"} 
-                className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
+                className="h-8 w-auto object-contain transition-transform group-hover:scale-105 flex-shrink-0"
               />
             ) : (
-              <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white text-sm font-bold transition-transform group-hover:scale-105">
+              <div 
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold transition-transform group-hover:scale-105 flex-shrink-0"
+                style={{ backgroundColor: config?.primaryColor || '#000000' }}
+              >
                 {(config?.siteName || "Portal Estudiante").charAt(0)}
               </div>
             )}
-            <span className="text-lg font-semibold text-gray-900 hidden sm:block">
+            <span className="text-base sm:text-lg font-semibold text-gray-900 truncate">
               {config?.siteName || "Portal Estudiante"}
             </span>
           </Link>
           
-          <nav className="flex items-center gap-6">
+          <nav className="flex items-center gap-2 sm:gap-6">
             <a 
               href="#nosotros" 
               className="text-sm text-gray-600 hover:text-gray-900 transition-colors hidden md:block"
@@ -411,7 +414,7 @@ export default function Home() {
 
       {/* Hero Slider */}
       <section className="relative pt-20 overflow-hidden">
-        <div className="relative h-[600px]">
+        <div className="relative h-[500px] sm:h-[600px] lg:h-[700px]">
           {loadingBanners ? (
             <div 
               className="absolute inset-0 flex items-center justify-center"
@@ -451,9 +454,9 @@ export default function Home() {
                       <img 
                         src={banner.image} 
                         alt={banner.title}
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover object-center"
                       />
-                      <div className="absolute inset-0 bg-black/40" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/40 to-black/50" />
                     </>
                   ) : (
                     <>

@@ -1,35 +1,39 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function VisitsChart() {
   const [period, setPeriod] = useState<"7d" | "30d" | "90d">("7d")
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const data = {
-    "7d": [
-      { day: "Lun", visits: 1200 },
-      { day: "Mar", visits: 1400 },
-      { day: "Mié", visits: 1100 },
-      { day: "Jue", visits: 1600 },
-      { day: "Vie", visits: 1800 },
-      { day: "Sáb", visits: 900 },
-      { day: "Dom", visits: 800 }
-    ],
-    "30d": [
-      { day: "Sem 1", visits: 8500 },
-      { day: "Sem 2", visits: 9200 },
-      { day: "Sem 3", visits: 8800 },
-      { day: "Sem 4", visits: 10100 }
-    ],
-    "90d": [
-      { day: "Mes 1", visits: 35000 },
-      { day: "Mes 2", visits: 38000 },
-      { day: "Mes 3", visits: 42000 }
-    ]
+  useEffect(() => {
+    loadVisitsData()
+  }, [period])
+
+  const loadVisitsData = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/admin/visits?period=${period}`)
+      const result = await response.json()
+      
+      console.log('📊 Datos de visitas recibidos:', result)
+      
+      if (result.success) {
+        setData(result.data)
+        console.log('📊 Data actualizada:', result.data)
+      }
+    } catch (error) {
+      console.error('Error cargando datos de visitas:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const currentData = data[period]
-  const maxVisits = Math.max(...currentData.map(d => d.visits))
+  const currentData = data.length > 0 ? data : [{ day: 'Sin datos', visits: 0 }]
+  const maxVisits = Math.max(...currentData.map(d => d.visits), 1)
+
+  console.log('📊 Datos del gráfico:', { currentData, maxVisits })
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -73,28 +77,66 @@ export default function VisitsChart() {
       </div>
 
       {/* Chart */}
-      <div className="relative h-64">
-        <div className="absolute inset-0 flex items-end justify-between gap-2">
-          {currentData.map((item, index) => {
-            const height = (item.visits / maxVisits) * 100
-            return (
-              <div key={index} className="flex-1 flex flex-col items-center gap-2">
-                <div className="w-full flex flex-col items-center">
-                  <span className="text-xs font-medium text-gray-900 mb-1">
-                    {item.visits.toLocaleString()}
-                  </span>
-                  <div
-                    className="w-full bg-gradient-to-t from-black to-gray-700 rounded-t-lg transition-all duration-500 hover:from-gray-700 hover:to-gray-600 cursor-pointer relative group"
-                    style={{ height: `${height}%` }}
-                  >
-                    <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 rounded-t-lg transition-colors"></div>
-                  </div>
-                </div>
-                <span className="text-xs text-gray-600 font-medium">{item.day}</span>
+      <div className="h-64 relative">
+        {loading ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-2"></div>
+              <p className="text-sm text-gray-600">Cargando datos...</p>
+            </div>
+          </div>
+        ) : (
+          <div className="h-full flex flex-col">
+            {/* Chart area */}
+            <div className="flex-1 relative">
+              {/* Grid lines */}
+              <div className="absolute inset-0 flex flex-col justify-between">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div key={i} className="w-full border-t border-gray-100"></div>
+                ))}
               </div>
-            )
-          })}
-        </div>
+
+              {/* Bar chart */}
+              <div className="absolute inset-0 flex items-end justify-between gap-2 px-2">
+                {currentData.map((item, index) => {
+                  // Calcular altura proporcional
+                  const heightPercent = item.visits > 0 
+                    ? (item.visits / maxVisits) * 85
+                    : 0
+                  
+                  const heightPx = `${heightPercent}%`
+                  
+                  console.log(`Barra ${item.day}: ${item.visits} visitas = ${heightPercent}% (max: ${maxVisits})`)
+                  
+                  return (
+                    <div key={index} className="flex-1 flex flex-col items-center justify-end h-full">
+                      {item.visits > 0 && (
+                        <>
+                          <span className="text-sm font-bold text-gray-900 mb-1">
+                            {item.visits}
+                          </span>
+                          <div
+                            className="w-full bg-gradient-to-t from-gray-900 to-gray-700 rounded-t-lg hover:from-gray-700 hover:to-gray-600 transition-colors cursor-pointer shadow-lg"
+                            style={{ height: heightPx }}
+                          />
+                        </>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* X-axis labels */}
+            <div className="flex justify-between pt-3 border-t border-gray-200 mt-2 px-2">
+              {currentData.map((item, index) => (
+                <div key={index} className="flex-1 text-center">
+                  <span className="text-xs text-gray-600 font-medium">{item.day}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats Summary */}

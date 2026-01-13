@@ -82,6 +82,13 @@ export default function BannersManager() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && editingBanner) {
+      // Validar tamaño de archivo (máximo 2MB)
+      const maxSize = 2 * 1024 * 1024 // 2MB en bytes
+      if (file.size > maxSize) {
+        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 2MB.')
+        return
+      }
+
       const reader = new FileReader()
       reader.onloadend = () => {
         const result = reader.result as string
@@ -153,6 +160,14 @@ export default function BannersManager() {
         }
       )
 
+      // Verificar si la respuesta es JSON válida
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text()
+        console.error('Respuesta no-JSON del servidor:', text)
+        throw new Error('El servidor devolvió una respuesta inválida. La imagen podría ser demasiado grande o hay un error en el servidor.')
+      }
+
       const data = await response.json()
 
       if (!response.ok) {
@@ -215,6 +230,13 @@ export default function BannersManager() {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && editingCompany) {
+      // Validar tamaño de archivo (máximo 2MB)
+      const maxSize = 2 * 1024 * 1024 // 2MB en bytes
+      if (file.size > maxSize) {
+        alert('El logo es demasiado grande. Por favor, selecciona una imagen menor a 2MB.')
+        return
+      }
+
       const reader = new FileReader()
       reader.onloadend = () => {
         const result = reader.result as string

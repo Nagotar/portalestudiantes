@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "db:init": "tsx scripts/init-turso.ts",
-    "db:seed": "tsx scripts/seed.ts"
+    "db:seed": "tsx scripts/seed.ts",
+    "db:analytics": "tsx scripts/create-analytics-tables.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",
