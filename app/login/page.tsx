@@ -87,12 +87,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex">
+    <div className="min-h-screen bg-white flex overflow-hidden">
       {/* Left Side - Login Form */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 animate-slide-in-left">
         <div className="w-full max-w-md">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 mb-8">
+          <Link href="/" className="flex items-center gap-3 mb-8 animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
             {config?.logo ? (
               <img 
                 src={config.logo} 
@@ -108,13 +108,13 @@ export default function LoginPage() {
           </Link>
 
           {/* Title */}
-          <div className="mb-8">
+          <div className="mb-8 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Iniciar Sesión</h1>
             <p className="text-gray-600">Ingresa tus credenciales para acceder</p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
             {/* Error Message */}
             {error && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
@@ -236,7 +236,7 @@ export default function LoginPage() {
           </form>
 
           {/* Back to Home */}
-          <div className="mt-8 text-center">
+          <div className="mt-8 text-center animate-fade-in" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
             <Link href="/" className="text-sm text-gray-600 hover:text-gray-900 transition-colors inline-flex items-center gap-1">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -249,13 +249,13 @@ export default function LoginPage() {
 
       {/* Right Side - Image/Gradient */}
       <div 
-        className="hidden lg:flex lg:flex-1 relative overflow-hidden"
+        className="hidden lg:flex lg:flex-1 relative overflow-hidden animate-slide-in-right"
         style={{
           backgroundImage: `linear-gradient(to bottom right, ${config?.primaryColor || '#1F2937'}, ${config?.secondaryColor || '#000000'})`
         }}
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.05),transparent_50%)]" />
-        <div className="relative z-10 flex flex-col items-center justify-center text-white p-12">
+        <div className="relative z-10 flex flex-col items-center justify-center text-white p-12 animate-fade-in" style={{ animationDelay: '0.6s', animationFillMode: 'both' }}>
           <div className="max-w-md text-center">
             {config?.logoLight ? (
               <div className="mb-8 mx-auto flex items-center justify-center">
