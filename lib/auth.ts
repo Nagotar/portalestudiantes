@@ -13,7 +13,7 @@ export interface UserPayload {
   role: string
 }
 
-export async function signToken(payload: UserPayload): Promise<string> {
+export async function signToken(payload: UserPayload, expiresIn: string = '8h'): Promise<string> {
   return await new SignJWT({
     id: payload.id,
     email: payload.email,
@@ -22,7 +22,7 @@ export async function signToken(payload: UserPayload): Promise<string> {
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('8h')
+    .setExpirationTime(expiresIn)
     .sign(secret)
 }
 

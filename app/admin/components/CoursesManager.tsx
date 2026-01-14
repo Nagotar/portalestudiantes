@@ -121,16 +121,63 @@ export default function CoursesManager() {
     setVideoError("")
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+          
+          // Redimensionar si es muy grande (reducido para cursos)
+          const maxDimension = 1280
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height / width) * maxDimension
+              width = maxDimension
+            } else {
+              width = (width / height) * maxDimension
+              height = maxDimension
+            }
+          }
+          
+          canvas.width = width
+          canvas.height = height
+          
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+          
+          // Comprimir a JPEG con calidad 0.6 (más compresión para cursos)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6)
+          resolve(compressedDataUrl)
+        }
+        img.onerror = reject
+        img.src = e.target?.result as string
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const result = reader.result as string
-        setImagePreview(result)
-        setFormData({ ...formData, image: result })
+      const maxSize = 5 * 1024 * 1024
+      if (file.size > maxSize) {
+        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 5MB.')
+        return
       }
-      reader.readAsDataURL(file)
+
+      try {
+        const compressedImage = await compressImage(file)
+        setImagePreview(compressedImage)
+        setFormData({ ...formData, image: compressedImage })
+      } catch (error) {
+        console.error('Error comprimiendo imagen:', error)
+        alert('Error al procesar la imagen. Intenta con otra imagen.')
+      }
     }
   }
 
@@ -144,10 +191,10 @@ export default function CoursesManager() {
       return
     }
 
-    // Validar tamaño (máximo 50MB)
-    const maxSize = 50 * 1024 * 1024 // 50MB
+    // Validar tamaño (máximo 2MB para evitar error 413)
+    const maxSize = 2 * 1024 * 1024
     if (file.size > maxSize) {
-      setVideoError('El video es demasiado grande. Máximo 50MB')
+      setVideoError('El video es demasiado grande. Máximo 2MB. Usa un video más corto o con menor calidad.')
       return
     }
 
@@ -216,6 +263,17 @@ export default function CoursesManager() {
           body: JSON.stringify(formData),
         })
 
+        // Verificar si es error 413
+        if (response.status === 413) {
+          throw new Error('Las imágenes o el video son demasiado grandes. Por favor:\n\n1. Usa imágenes más pequeñas (máx 2MB)\n2. Usa un video más corto o de menor calidad (máx 2MB)\n3. Reduce la resolución de las imágenes antes de subirlas')
+        }
+
+        // Verificar si la respuesta es JSON válida
+        const contentType = response.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Error del servidor. Las imágenes o el video podrían ser demasiado grandes.')
+        }
+
         const data = await response.json()
 
         if (!response.ok) {
@@ -233,6 +291,17 @@ export default function CoursesManager() {
           },
           body: JSON.stringify(formData),
         })
+
+        // Verificar si es error 413
+        if (response.status === 413) {
+          throw new Error('Las imágenes o el video son demasiado grandes. Por favor:\n\n1. Usa imágenes más pequeñas (máx 2MB)\n2. Usa un video más corto o de menor calidad (máx 2MB)\n3. Reduce la resolución de las imágenes antes de subirlas')
+        }
+
+        // Verificar si la respuesta es JSON válida
+        const contentType = response.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Error del servidor. Las imágenes o el video podrían ser demasiado grandes.')
+        }
 
         const data = await response.json()
 

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db-utils'
 
+// Configuración para aumentar el límite de tamaño del body
+export const runtime = 'nodejs'
+export const maxDuration = 60
+export const dynamic = 'force-dynamic'
+
 // GET /api/videos - Listar videos
 export async function GET(request: NextRequest) {
   try {

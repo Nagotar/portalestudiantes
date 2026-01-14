@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db-utils'
 import { getUserFromRequest } from '@/lib/auth'
 
+// Configuración para aumentar el límite de tamaño del body
+export const runtime = 'nodejs'
+export const maxDuration = 60 // 60 segundos máximo
+export const dynamic = 'force-dynamic'
+
 // Caché en memoria del servidor (persiste entre requests)
 let serverConfigCache: any = null
 let serverCacheTimestamp: number = 0
@@ -107,7 +112,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT /api/config - Actualizar configuración del sistema
+// PUT /api/config - Actualizar configuración del sistema (actualización parcial)
 export async function PUT(request: NextRequest) {
   try {
     // Verificar autenticación y rol de admin
@@ -121,157 +126,91 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const {
-      siteName,
-      logo,
-      logoLight,
-      favicon,
-      primaryColor,
-      secondaryColor,
-      accentColor,
-      backgroundColor,
-      textColor,
-      headerColor,
-      sidebarColor,
-      buttonColor,
-      linkColor,
-      whatsappNumber,
-      whatsappMessage,
-      whatsappEnabled,
-      companyName,
-      companyDescription,
-      companyEmail,
-      companyPhone,
-      companyAddress,
-      aboutTitle,
-      aboutDescription,
-      aboutMission,
-      aboutVision,
-      aboutHistory,
-      aboutImage1,
-      aboutImage2,
-      aboutImage3,
-      footerText,
-      footerShowCompanyInfo,
-      footerShowSocialMedia,
-      footerFacebookUrl,
-      footerInstagramUrl,
-      footerTwitterUrl,
-      footerLinkedinUrl,
-      footerYoutubeUrl,
-      footerLink1Text,
-      footerLink1Url,
-      footerLink2Text,
-      footerLink2Url,
-      footerLink3Text,
-      footerLink3Url,
-      footerLink4Text,
-      footerLink4Url
-    } = body
 
     // Limpiar caché del servidor antes de actualizar
     serverConfigCache = null
     serverCacheTimestamp = 0
 
-    // Actualizar configuración
+    // Construir query dinámico solo con los campos enviados
+    const updates: string[] = []
+    const values: any[] = []
+
+    // Mapeo de campos del body a columnas de la base de datos
+    const fieldMapping: { [key: string]: string } = {
+      siteName: 'site_name',
+      logo: 'logo',
+      logoLight: 'logo_light',
+      favicon: 'favicon',
+      primaryColor: 'primary_color',
+      secondaryColor: 'secondary_color',
+      accentColor: 'accent_color',
+      backgroundColor: 'background_color',
+      textColor: 'text_color',
+      headerColor: 'header_color',
+      sidebarColor: 'sidebar_color',
+      buttonColor: 'button_color',
+      linkColor: 'link_color',
+      whatsappNumber: 'whatsapp_number',
+      whatsappMessage: 'whatsapp_message',
+      whatsappEnabled: 'whatsapp_enabled',
+      companyName: 'company_name',
+      companyDescription: 'company_description',
+      companyEmail: 'company_email',
+      companyPhone: 'company_phone',
+      companyAddress: 'company_address',
+      aboutTitle: 'about_title',
+      aboutDescription: 'about_description',
+      aboutMission: 'about_mission',
+      aboutVision: 'about_vision',
+      aboutHistory: 'about_history',
+      aboutImage1: 'about_image1',
+      aboutImage2: 'about_image2',
+      aboutImage3: 'about_image3',
+      footerText: 'footer_text',
+      footerShowCompanyInfo: 'footer_show_company_info',
+      footerShowSocialMedia: 'footer_show_social_media',
+      footerFacebookUrl: 'footer_facebook_url',
+      footerInstagramUrl: 'footer_instagram_url',
+      footerTwitterUrl: 'footer_twitter_url',
+      footerLinkedinUrl: 'footer_linkedin_url',
+      footerYoutubeUrl: 'footer_youtube_url',
+      footerLink1Text: 'footer_link1_text',
+      footerLink1Url: 'footer_link1_url',
+      footerLink2Text: 'footer_link2_text',
+      footerLink2Url: 'footer_link2_url',
+      footerLink3Text: 'footer_link3_text',
+      footerLink3Url: 'footer_link3_url',
+      footerLink4Text: 'footer_link4_text',
+      footerLink4Url: 'footer_link4_url'
+    }
+
+    // Construir actualizaciones solo para campos presentes en el body
+    for (const [bodyField, dbColumn] of Object.entries(fieldMapping)) {
+      if (body.hasOwnProperty(bodyField)) {
+        updates.push(`${dbColumn} = ?`)
+        // Convertir booleanos a 0/1 para SQLite
+        if (typeof body[bodyField] === 'boolean') {
+          values.push(body[bodyField] ? 1 : 0)
+        } else {
+          values.push(body[bodyField])
+        }
+      }
+    }
+
+    if (updates.length === 0) {
+      return NextResponse.json(
+        { error: 'No se proporcionaron campos para actualizar' },
+        { status: 400 }
+      )
+    }
+
+    // Agregar updated_at
+    updates.push('updated_at = CURRENT_TIMESTAMP')
+
+    // Ejecutar actualización
     await db.execute({
-      sql: `
-        UPDATE system_config SET
-          site_name = ?,
-          logo = ?,
-          logo_light = ?,
-          favicon = ?,
-          primary_color = ?,
-          secondary_color = ?,
-          accent_color = ?,
-          background_color = ?,
-          text_color = ?,
-          header_color = ?,
-          sidebar_color = ?,
-          button_color = ?,
-          link_color = ?,
-          whatsapp_number = ?,
-          whatsapp_message = ?,
-          whatsapp_enabled = ?,
-          company_name = ?,
-          company_description = ?,
-          company_email = ?,
-          company_phone = ?,
-          company_address = ?,
-          about_title = ?,
-          about_description = ?,
-          about_mission = ?,
-          about_vision = ?,
-          about_history = ?,
-          about_image1 = ?,
-          about_image2 = ?,
-          about_image3 = ?,
-          footer_text = ?,
-          footer_show_company_info = ?,
-          footer_show_social_media = ?,
-          footer_facebook_url = ?,
-          footer_instagram_url = ?,
-          footer_twitter_url = ?,
-          footer_linkedin_url = ?,
-          footer_youtube_url = ?,
-          footer_link1_text = ?,
-          footer_link1_url = ?,
-          footer_link2_text = ?,
-          footer_link2_url = ?,
-          footer_link3_text = ?,
-          footer_link3_url = ?,
-          footer_link4_text = ?,
-          footer_link4_url = ?,
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = 1
-      `,
-      args: [
-        siteName,
-        logo,
-        logoLight,
-        favicon,
-        primaryColor,
-        secondaryColor,
-        accentColor,
-        backgroundColor,
-        textColor,
-        headerColor,
-        sidebarColor,
-        buttonColor,
-        linkColor,
-        whatsappNumber,
-        whatsappMessage,
-        whatsappEnabled ? 1 : 0,
-        companyName,
-        companyDescription,
-        companyEmail,
-        companyPhone,
-        companyAddress,
-        aboutTitle,
-        aboutDescription,
-        aboutMission,
-        aboutVision,
-        aboutHistory,
-        aboutImage1,
-        aboutImage2,
-        aboutImage3,
-        footerText,
-        footerShowCompanyInfo ? 1 : 0,
-        footerShowSocialMedia ? 1 : 0,
-        footerFacebookUrl,
-        footerInstagramUrl,
-        footerTwitterUrl,
-        footerLinkedinUrl,
-        footerYoutubeUrl,
-        footerLink1Text,
-        footerLink1Url,
-        footerLink2Text,
-        footerLink2Url,
-        footerLink3Text,
-        footerLink3Url,
-        footerLink4Text,
-        footerLink4Url
-      ]
+      sql: `UPDATE system_config SET ${updates.join(', ')} WHERE id = 1`,
+      args: values
     })
 
     // Obtener configuración actualizada

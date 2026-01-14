@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
@@ -19,13 +20,15 @@ export default function LoginPage() {
     setIsLoading(true)
     setError("")
     
+    console.log('Frontend - Sending login with rememberMe:', rememberMe)
+    
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe }),
       })
 
       const data = await response.json()
@@ -151,9 +154,11 @@ export default function LoginPage() {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 border-gray-300 rounded text-black focus:ring-black"
                 />
-                <span className="text-sm text-gray-600">Recordarme</span>
+                <span className="text-sm text-gray-600">Recordarme (30 días)</span>
               </label>
               <Link href="/forgot-password" className="text-sm text-gray-900 hover:text-gray-600 transition-colors">
                 ¿Olvidaste tu contraseña?

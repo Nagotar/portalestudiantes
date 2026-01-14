@@ -96,27 +96,180 @@ export default function VideosManager() {
     setShowModal(true)
   }
 
-  const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+          
+          // Redimensionar si es muy grande
+          const maxDimension = 1920
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height / width) * maxDimension
+              width = maxDimension
+            } else {
+              width = (width / height) * maxDimension
+              height = maxDimension
+            }
+          }
+          
+          canvas.width = width
+          canvas.height = height
+          
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+          
+          // Comprimir a JPEG con calidad 0.8
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8)
+          resolve(compressedDataUrl)
+        }
+        img.onerror = reject
+        img.src = e.target?.result as string
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const result = reader.result as string
-        setThumbnailPreview(result)
-        if (editingVideo) {
-          setEditingVideo({ ...editingVideo, thumbnail: result })
-        }
+      const maxSize = 5 * 1024 * 1024
+      if (file.size > maxSize) {
+        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 5MB.')
+        return
       }
-      reader.readAsDataURL(file)
+
+      try {
+        const compressedImage = await compressImage(file)
+        setThumbnailPreview(compressedImage)
+        if (editingVideo) {
+          setEditingVideo({ ...editingVideo, thumbnail: compressedImage })
+        }
+      } catch (error) {
+        console.error('Error comprimiendo imagen:', error)
+        alert('Error al procesar la imagen. Intenta con otra imagen.')
+      }
     }
   }
 
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const convertToEmbedUrl = (url: string): string => {
+    if (!url) return url
+    
+    const trimmedUrl = url.trim()
+    
+    // Detectar URLs inválidas (páginas principales sin video)
+    if (trimmedUrl === 'https://vimeo.com' || trimmedUrl === 'https://vimeo.com/' || 
+        trimmedUrl === 'https://www.vimeo.com' || trimmedUrl === 'https://www.vimeo.com/') {
+      alert('❌ URL inválida\n\nEsto es la página principal de Vimeo, no un video específico.\n\nPor favor:\n1. Abre el video que quieres usar en Vimeo\n2. Copia la URL completa (ej: https://vimeo.com/123456789)\n3. Pégala aquí')
+      return ''
+    }
+    
+    if (trimmedUrl === 'https://youtube.com' || trimmedUrl === 'https://youtube.com/' ||
+        trimmedUrl === 'https://www.youtube.com' || trimmedUrl === 'https://www.youtube.com/') {
+      alert('❌ URL inválida\n\nEsto es la página principal de YouTube, no un video específico.\n\nPor favor:\n1. Abre el video que quieres usar en YouTube\n2. Copia la URL completa (ej: https://www.youtube.com/watch?v=ABC123)\n3. Pégala aquí')
+      return ''
+    }
+    
+    // YouTube: convertir watch?v= a embed
+    if (trimmedUrl.includes('youtube.com/watch')) {
+      const videoId = trimmedUrl.split('v=')[1]?.split('&')[0]
+      if (videoId) return `https://www.youtube.com/embed/${videoId}`
+    }
+    
+    // YouTube: convertir youtu.be a embed
+    if (trimmedUrl.includes('youtu.be/')) {
+      const videoId = trimmedUrl.split('youtu.be/')[1]?.split('?')[0]
+      if (videoId) return `https://www.youtube.com/embed/${videoId}`
+    }
+    
+    // Vimeo: convertir vimeo.com/VIDEO_ID a player.vimeo.com/video/VIDEO_ID
+    if (trimmedUrl.includes('vimeo.com/') && !trimmedUrl.includes('player.vimeo.com')) {
+      // Extraer el ID del video (puede tener parámetros después)
+      const afterVimeo = trimmedUrl.split('vimeo.com/')[1]
+      if (afterVimeo) {
+        // Remover parámetros de query y paths adicionales
+        const videoId = afterVimeo.split('?')[0].split('/')[0].split('#')[0]
+        
+        // Validar que sea un número válido
+        if (videoId && !isNaN(Number(videoId)) && videoId.length > 0) {
+          console.log('✅ Vimeo ID extraído:', videoId)
+          return `https://player.vimeo.com/video/${videoId}`
+        }
+        
+        // Si no se pudo extraer un ID válido
+        alert('❌ URL de Vimeo inválida\n\nNo se pudo encontrar el ID del video.\n\nAsegúrate de copiar la URL completa del video, por ejemplo:\nhttps://vimeo.com/123456789')
+        return ''
+      }
+    }
+    
+    // Google Drive: convertir URLs de compartir a formato preview
+    if (trimmedUrl.includes('drive.google.com')) {
+      // Formato 1: https://drive.google.com/file/d/FILE_ID/view
+      if (trimmedUrl.includes('/file/d/')) {
+        const fileId = trimmedUrl.split('/file/d/')[1]?.split('/')[0]?.split('?')[0]
+        if (fileId) {
+          console.log('✅ Google Drive ID extraído:', fileId)
+          return `https://drive.google.com/file/d/${fileId}/preview`
+        }
+      }
+      
+      // Formato 2: https://drive.google.com/open?id=FILE_ID
+      if (trimmedUrl.includes('open?id=')) {
+        const fileId = trimmedUrl.split('open?id=')[1]?.split('&')[0]
+        if (fileId) {
+          console.log('✅ Google Drive ID extraído:', fileId)
+          return `https://drive.google.com/file/d/${fileId}/preview`
+        }
+      }
+      
+      // Si ya está en formato preview, dejarlo como está
+      if (trimmedUrl.includes('/preview')) {
+        return trimmedUrl
+      }
+      
+      // Si no se pudo convertir
+      alert('❌ URL de Google Drive inválida\n\nAsegúrate de:\n1. El video esté configurado como "Cualquiera con el enlace puede ver"\n2. Copiar el enlace completo del archivo\n\nEjemplo: https://drive.google.com/file/d/ABC123/view')
+      return ''
+    }
+    
+    return trimmedUrl
+  }
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Validar tamaño (máximo 4MB para videos debido a limitaciones de Vercel)
+      const maxSize = 4 * 1024 * 1024
+      if (file.size > maxSize) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2)
+        alert(`El video es demasiado grande (${sizeMB}MB). Máximo 4MB debido a limitaciones de Vercel.\n\n⚠️ Para videos más grandes:\n1. Sube el video a YouTube o Vimeo\n2. Copia el enlace de embed\n3. Pégalo en el campo "URL Externa" abajo`)
+        return
+      }
+
       setVideoFile(file)
-      if (editingVideo) {
-        setEditingVideo({ ...editingVideo, videoUrl: URL.createObjectURL(file) })
+      
+      // Convertir video a Base64 para persistencia
+      try {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const videoBase64 = e.target?.result as string
+          if (editingVideo) {
+            setEditingVideo({ ...editingVideo, videoUrl: videoBase64 })
+          }
+        }
+        reader.onerror = () => {
+          alert('Error al cargar el video. Intenta con otro archivo.')
+        }
+        reader.readAsDataURL(file)
+      } catch (error) {
+        console.error('Error procesando video:', error)
+        alert('Error al procesar el video. Intenta con otro archivo.')
       }
     }
   }
@@ -268,6 +421,18 @@ export default function VideosManager() {
 
             {/* Content */}
             <div className="p-4">
+              {/* Warning for invalid video URLs */}
+              {video.videoUrl && video.videoUrl.startsWith('blob:') && (
+                <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <p className="text-xs text-red-700 font-medium">Video no disponible. Vuelve a subirlo.</p>
+                  </div>
+                </div>
+              )}
+              
               <div className="mb-2">
                 <h4 className="font-semibold text-gray-900 mb-1 line-clamp-1">{video.title}</h4>
                 <p className="text-xs text-gray-500 mb-2">{video.category}</p>
@@ -344,9 +509,75 @@ export default function VideosManager() {
             </div>
 
             <div className="p-6 space-y-4">
+              {/* URL Externa (YouTube/Vimeo/Google Drive) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">URL Externa (YouTube/Vimeo/Google Drive)</label>
+                <input
+                  type="text"
+                  value={editingVideo.videoUrl?.startsWith('http') ? editingVideo.videoUrl : ''}
+                  onChange={(e) => {
+                    const convertedUrl = convertToEmbedUrl(e.target.value)
+                    console.log('URL Original:', e.target.value)
+                    console.log('URL Convertida:', convertedUrl)
+                    setEditingVideo({ ...editingVideo, videoUrl: convertedUrl })
+                  }}
+                  onBlur={(e) => {
+                    const convertedUrl = convertToEmbedUrl(e.target.value)
+                    if (convertedUrl) {
+                      console.log('URL Final guardada:', convertedUrl)
+                    }
+                    setEditingVideo({ ...editingVideo, videoUrl: convertedUrl })
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
+                  placeholder="Pega cualquier URL de YouTube, Vimeo o Google Drive"
+                />
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-xs text-blue-800 font-semibold mb-2">✅ Ejemplos de URLs válidas:</p>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs text-blue-900 font-medium">YouTube:</p>
+                      <ul className="text-xs text-blue-700 ml-4">
+                        <li>• https://www.youtube.com/watch?v=dQw4w9WgXcQ</li>
+                        <li>• https://youtu.be/dQw4w9WgXcQ</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="text-xs text-blue-900 font-medium">Vimeo (debe ser público):</p>
+                      <ul className="text-xs text-blue-700 ml-4">
+                        <li>• https://vimeo.com/123456789</li>
+                        <li>• https://player.vimeo.com/video/123456789</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="text-xs text-blue-900 font-medium">Google Drive:</p>
+                      <ul className="text-xs text-blue-700 ml-4">
+                        <li>• https://drive.google.com/file/d/ABC123/view</li>
+                        <li>• https://drive.google.com/open?id=ABC123</li>
+                      </ul>
+                      <p className="text-xs text-orange-700 mt-1 ml-4">⚠️ Configura como "Cualquiera con el enlace"</p>
+                    </div>
+                  </div>
+                  {editingVideo.videoUrl && editingVideo.videoUrl.startsWith('http') && (
+                    <div className="mt-2 pt-2 border-t border-blue-300">
+                      <p className="text-xs text-green-700 font-semibold">✓ URL actual:</p>
+                      <p className="text-xs text-green-600 break-all">{editingVideo.videoUrl}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">O sube un archivo pequeño</span>
+                </div>
+              </div>
+
               {/* Video Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">Archivo de Video</label>
+                <label className="block text-sm font-medium text-gray-900 mb-2">Archivo de Video (Máx 4MB)</label>
                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors bg-gray-50 hover:bg-gray-100">
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <svg className="w-10 h-10 mb-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -361,7 +592,7 @@ export default function VideosManager() {
                         </>
                       )}
                     </p>
-                    <p className="text-xs text-gray-500">MP4, WEBM, MOV hasta 500MB</p>
+                    <p className="text-xs text-gray-500">MP4, WEBM, MOV hasta 4MB (limitación de Vercel)</p>
                   </div>
                   <input
                     type="file"

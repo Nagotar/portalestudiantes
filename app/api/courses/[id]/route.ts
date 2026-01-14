@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/prisma'
 import { getUserFromRequest } from '@/lib/auth'
 
+// Configuración para aumentar el límite de tamaño del body
+export const runtime = 'nodejs'
+export const maxDuration = 60
+export const dynamic = 'force-dynamic'
+
 // GET - Obtener un curso por ID
 export async function GET(
   request: NextRequest,

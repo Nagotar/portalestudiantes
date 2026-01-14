@@ -79,23 +79,76 @@ export default function BannersManager() {
     setShowModal(true)
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+          
+          // Redimensionar si es muy grande
+          const maxDimension = 1920
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height / width) * maxDimension
+              width = maxDimension
+            } else {
+              width = (width / height) * maxDimension
+              height = maxDimension
+            }
+          }
+          
+          canvas.width = width
+          canvas.height = height
+          
+          const ctx = canvas.getContext('2d')
+          
+          // Detectar si es PNG para preservar transparencia
+          const isPNG = file.type === 'image/png'
+          
+          if (!isPNG) {
+            // Para JPEG, usar fondo blanco en lugar de negro
+            ctx!.fillStyle = '#FFFFFF'
+            ctx!.fillRect(0, 0, width, height)
+          }
+          
+          ctx?.drawImage(img, 0, 0, width, height)
+          
+          // Usar PNG para preservar transparencia, JPEG para otros
+          const compressedDataUrl = isPNG 
+            ? canvas.toDataURL('image/png')
+            : canvas.toDataURL('image/jpeg', 0.8)
+          resolve(compressedDataUrl)
+        }
+        img.onerror = reject
+        img.src = e.target?.result as string
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && editingBanner) {
-      // Validar tamaño de archivo (máximo 2MB)
-      const maxSize = 2 * 1024 * 1024 // 2MB en bytes
+      // Validar tamaño de archivo (máximo 5MB antes de comprimir)
+      const maxSize = 5 * 1024 * 1024
       if (file.size > maxSize) {
-        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 2MB.')
+        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 5MB.')
         return
       }
 
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const result = reader.result as string
-        setImagePreview(result)
-        setEditingBanner({ ...editingBanner, image: result, useImage: true })
+      try {
+        const compressedImage = await compressImage(file)
+        setImagePreview(compressedImage)
+        setEditingBanner({ ...editingBanner, image: compressedImage, useImage: true })
+      } catch (error) {
+        console.error('Error comprimiendo imagen:', error)
+        alert('Error al procesar la imagen. Intenta con otra imagen.')
       }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -227,23 +280,24 @@ export default function BannersManager() {
     setShowCompanyModal(true)
   }
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && editingCompany) {
-      // Validar tamaño de archivo (máximo 2MB)
-      const maxSize = 2 * 1024 * 1024 // 2MB en bytes
+      // Validar tamaño de archivo (máximo 5MB antes de comprimir)
+      const maxSize = 5 * 1024 * 1024
       if (file.size > maxSize) {
-        alert('El logo es demasiado grande. Por favor, selecciona una imagen menor a 2MB.')
+        alert('El logo es demasiado grande. Por favor, selecciona una imagen menor a 5MB.')
         return
       }
 
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const result = reader.result as string
-        setLogoPreview(result)
-        setEditingCompany({ ...editingCompany, logo: result })
+      try {
+        const compressedImage = await compressImage(file)
+        setLogoPreview(compressedImage)
+        setEditingCompany({ ...editingCompany, logo: compressedImage })
+      } catch (error) {
+        console.error('Error comprimiendo logo:', error)
+        alert('Error al procesar el logo. Intenta con otra imagen.')
       }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -511,12 +565,12 @@ export default function BannersManager() {
                 className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
               >
                 {/* Logo Preview */}
-                <div className="w-full h-32 bg-gray-50 rounded-lg flex items-center justify-center mb-4 border-2 border-gray-200">
+                <div className="w-full h-40 bg-white rounded-lg flex items-center justify-center mb-4 border-2 border-gray-200 p-4">
                   {company.logo ? (
                     <img 
                       src={company.logo} 
                       alt={company.name}
-                      className="max-w-full max-h-full object-contain p-2"
+                      className="max-w-full max-h-full object-contain"
                     />
                   ) : (
                     <div className="text-center text-gray-400">
@@ -753,11 +807,11 @@ export default function BannersManager() {
                 
                 {/* Logo Preview */}
                 {logoPreview && (
-                  <div className="relative w-full h-40 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50 mb-3 flex items-center justify-center">
+                  <div className="relative w-full h-40 rounded-lg overflow-hidden border-2 border-gray-200 bg-white mb-3 flex items-center justify-center p-4">
                     <img
                       src={logoPreview}
                       alt="Preview"
-                      className="max-w-full max-h-full object-contain p-4"
+                      className="max-w-full max-h-full object-contain"
                     />
                     <button
                       type="button"

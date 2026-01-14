@@ -124,7 +124,14 @@ export default function SystemConfig() {
       setLoading(true)
       setError(null)
       
-      const response = await fetch('/api/config')
+      // Agregar timestamp para evitar caché
+      const timestamp = Date.now()
+      const response = await fetch(`/api/config?t=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
       const data = await response.json()
 
       if (!response.ok) {
@@ -149,24 +156,71 @@ export default function SystemConfig() {
     }
   }
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "logo" | "logoLight" | "favicon") => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+          
+          // Redimensionar si es muy grande
+          const maxDimension = 1920
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height / width) * maxDimension
+              width = maxDimension
+            } else {
+              width = (width / height) * maxDimension
+              height = maxDimension
+            }
+          }
+          
+          canvas.width = width
+          canvas.height = height
+          
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+          
+          // Comprimir a JPEG con calidad 0.8
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8)
+          resolve(compressedDataUrl)
+        }
+        img.onerror = reject
+        img.src = e.target?.result as string
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "logo" | "logoLight" | "favicon") => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const result = reader.result as string
-        if (type === "logo") {
-          setLogoPreview(result)
-          setConfig({ ...config, logo: result })
-        } else if (type === "logoLight") {
-          setLogoLightPreview(result)
-          setConfig({ ...config, logoLight: result })
-        } else {
-          setFaviconPreview(result)
-          setConfig({ ...config, favicon: result })
-        }
+      const maxSize = 5 * 1024 * 1024
+      if (file.size > maxSize) {
+        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 5MB.')
+        return
       }
-      reader.readAsDataURL(file)
+
+      try {
+        const compressedImage = await compressImage(file)
+        if (type === "logo") {
+          setLogoPreview(compressedImage)
+          setConfig({ ...config, logo: compressedImage })
+        } else if (type === "logoLight") {
+          setLogoLightPreview(compressedImage)
+          setConfig({ ...config, logoLight: compressedImage })
+        } else {
+          setFaviconPreview(compressedImage)
+          setConfig({ ...config, favicon: compressedImage })
+        }
+      } catch (error) {
+        console.error('Error comprimiendo imagen:', error)
+        alert('Error al procesar la imagen. Intenta con otra imagen.')
+      }
     }
   }
 
@@ -183,24 +237,31 @@ export default function SystemConfig() {
     }
   }
 
-  const handleAboutImageUpload = (e: React.ChangeEvent<HTMLInputElement>, imageNumber: 1 | 2 | 3) => {
+  const handleAboutImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, imageNumber: 1 | 2 | 3) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const result = reader.result as string
-        if (imageNumber === 1) {
-          setAboutImage1Preview(result)
-          setConfig({ ...config, aboutImage1: result })
-        } else if (imageNumber === 2) {
-          setAboutImage2Preview(result)
-          setConfig({ ...config, aboutImage2: result })
-        } else {
-          setAboutImage3Preview(result)
-          setConfig({ ...config, aboutImage3: result })
-        }
+      const maxSize = 5 * 1024 * 1024
+      if (file.size > maxSize) {
+        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 5MB.')
+        return
       }
-      reader.readAsDataURL(file)
+
+      try {
+        const compressedImage = await compressImage(file)
+        if (imageNumber === 1) {
+          setAboutImage1Preview(compressedImage)
+          setConfig({ ...config, aboutImage1: compressedImage })
+        } else if (imageNumber === 2) {
+          setAboutImage2Preview(compressedImage)
+          setConfig({ ...config, aboutImage2: compressedImage })
+        } else {
+          setAboutImage3Preview(compressedImage)
+          setConfig({ ...config, aboutImage3: compressedImage })
+        }
+      } catch (error) {
+        console.error('Error comprimiendo imagen:', error)
+        alert('Error al procesar la imagen. Intenta con otra imagen.')
+      }
     }
   }
 
@@ -261,10 +322,86 @@ export default function SystemConfig() {
   const handleSave = async () => {
     try {
       setError(null)
+      
+      // Preparar solo los datos de la sección activa
+      let dataToSend: any = {}
+      
+      switch (activeSection) {
+        case 'general':
+          dataToSend = {
+            siteName: config.siteName,
+            whatsappNumber: config.whatsappNumber,
+            whatsappMessage: config.whatsappMessage,
+            whatsappEnabled: config.whatsappEnabled,
+            companyName: config.companyName,
+            companyDescription: config.companyDescription,
+            companyEmail: config.companyEmail,
+            companyPhone: config.companyPhone,
+            companyAddress: config.companyAddress
+          }
+          break
+        
+        case 'logos':
+          dataToSend = {
+            logo: config.logo,
+            logoLight: config.logoLight,
+            favicon: config.favicon
+          }
+          break
+        
+        case 'colors':
+          dataToSend = {
+            primaryColor: config.primaryColor,
+            secondaryColor: config.secondaryColor,
+            accentColor: config.accentColor,
+            backgroundColor: config.backgroundColor,
+            textColor: config.textColor,
+            headerColor: config.headerColor,
+            sidebarColor: config.sidebarColor,
+            buttonColor: config.buttonColor,
+            linkColor: config.linkColor
+          }
+          break
+        
+        case 'about':
+          dataToSend = {
+            aboutTitle: config.aboutTitle,
+            aboutDescription: config.aboutDescription,
+            aboutMission: config.aboutMission,
+            aboutVision: config.aboutVision,
+            aboutHistory: config.aboutHistory,
+            aboutImage1: config.aboutImage1,
+            aboutImage2: config.aboutImage2,
+            aboutImage3: config.aboutImage3
+          }
+          break
+        
+        case 'footer':
+          dataToSend = {
+            footerText: config.footerText,
+            footerShowCompanyInfo: config.footerShowCompanyInfo,
+            footerShowSocialMedia: config.footerShowSocialMedia,
+            footerFacebookUrl: config.footerFacebookUrl,
+            footerInstagramUrl: config.footerInstagramUrl,
+            footerTwitterUrl: config.footerTwitterUrl,
+            footerLinkedinUrl: config.footerLinkedinUrl,
+            footerYoutubeUrl: config.footerYoutubeUrl,
+            footerLink1Text: config.footerLink1Text,
+            footerLink1Url: config.footerLink1Url,
+            footerLink2Text: config.footerLink2Text,
+            footerLink2Url: config.footerLink2Url,
+            footerLink3Text: config.footerLink3Text,
+            footerLink3Url: config.footerLink3Url,
+            footerLink4Text: config.footerLink4Text,
+            footerLink4Url: config.footerLink4Url
+          }
+          break
+      }
+
       const response = await fetch('/api/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
+        body: JSON.stringify(dataToSend)
       })
 
       const data = await response.json()
