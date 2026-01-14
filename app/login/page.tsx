@@ -12,8 +12,42 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false)
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("")
+  const [isSendingRequest, setIsSendingRequest] = useState(false)
   const router = useRouter()
   const { config } = useConfig()
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSendingRequest(true)
+    
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: forgotPasswordEmail }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // Mostrar mensaje de éxito y cerrar el modal después de 3 segundos
+        setTimeout(() => {
+          setShowForgotPasswordModal(false)
+          setForgotPasswordEmail("")
+          setIsSendingRequest(false)
+        }, 3000)
+      } else {
+        setIsSendingRequest(false)
+      }
+    } catch (err) {
+      console.error('Error al solicitar recuperación:', err)
+      setIsSendingRequest(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,6 +70,9 @@ export default function LoginPage() {
       if (!response.ok) {
         throw new Error(data.error || 'Error al iniciar sesión')
       }
+
+      console.log('Login successful, response:', data)
+      console.log('RememberMe was:', rememberMe)
 
       // Redirigir según el rol del usuario
       if (data.redirectUrl) {
@@ -160,9 +197,13 @@ export default function LoginPage() {
                 />
                 <span className="text-sm text-gray-600">Recordarme (30 días)</span>
               </label>
-              <Link href="/forgot-password" className="text-sm text-gray-900 hover:text-gray-600 transition-colors">
+              <button
+                type="button"
+                onClick={() => setShowForgotPasswordModal(true)}
+                className="text-sm text-gray-900 hover:text-gray-600 transition-colors"
+              >
                 ¿Olvidaste tu contraseña?
-              </Link>
+              </button>
             </div>
 
             {/* Submit Button */}
@@ -254,6 +295,127 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Olvidaste tu Contraseña */}
+      {showForgotPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+            <div className="p-8">
+              {!isSendingRequest ? (
+                <>
+                  {/* Header con Logo */}
+                  <div className="text-center mb-6">
+                    {config?.logo ? (
+                      <div className="mb-4 mx-auto flex items-center justify-center">
+                        <img 
+                          src={config.logo} 
+                          alt={config.siteName || "Logo"} 
+                          className="h-16 w-auto object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mb-4 mx-auto">
+                        <span className="text-2xl font-bold text-white">
+                          {(config?.siteName || "Portal").charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">¿Olvidaste tu contraseña?</h2>
+                    <p className="text-gray-600 text-sm">
+                      Ingresa tu correo electrónico y contactaremos al administrador
+                    </p>
+                  </div>
+
+                  {/* Formulario */}
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div>
+                      <label htmlFor="forgot-email" className="block text-sm font-medium text-gray-900 mb-2">
+                        Correo Electrónico
+                      </label>
+                      <input
+                        id="forgot-email"
+                        type="email"
+                        value={forgotPasswordEmail}
+                        onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all text-gray-900 placeholder:text-gray-400"
+                        placeholder="tu@email.com"
+                      />
+                    </div>
+
+                    {/* Botones */}
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowForgotPasswordModal(false)
+                          setForgotPasswordEmail("")
+                        }}
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        style={{ 
+                          backgroundColor: config?.buttonColor || '#000000',
+                          color: '#ffffff'
+                        }}
+                        className="flex-1 px-4 py-3 rounded-lg font-medium hover:opacity-90 transition-all"
+                      >
+                        Enviar Solicitud
+                      </button>
+                    </div>
+                  </form>
+                </>
+              ) : (
+                <>
+                  {/* Mensaje de Confirmación */}
+                  <div className="text-center">
+                    {config?.logo ? (
+                      <div className="mb-6 mx-auto flex items-center justify-center">
+                        <img 
+                          src={config.logo} 
+                          alt={config.siteName || "Logo"} 
+                          className="h-20 w-auto object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 bg-black rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                        <span className="text-3xl font-bold text-white">
+                          {(config?.siteName || "Portal").charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Icono de éxito */}
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+
+                    <h2 className="text-2xl font-bold text-gray-900 mb-3">¡Solicitud Enviada!</h2>
+                    <p className="text-gray-600 mb-6">
+                      Ya contactamos al administrador para ayudarte con tu contraseña. 
+                      Te responderemos a la brevedad.
+                    </p>
+
+                    {/* Animación de carga */}
+                    <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Cerrando...</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

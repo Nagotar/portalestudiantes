@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs'
 // PUT /api/users/[id] - Actualizar usuario
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticación
@@ -19,7 +19,8 @@ export async function PUT(
       )
     }
 
-    const userId = parseInt(params.id)
+    const { id } = await params
+    const userId = parseInt(id)
     if (isNaN(userId)) {
       return NextResponse.json(
         { error: 'ID de usuario inválido' },
@@ -102,7 +103,7 @@ export async function PUT(
 // DELETE /api/users/[id] - Eliminar usuario
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticación
@@ -115,7 +116,8 @@ export async function DELETE(
       )
     }
 
-    const userId = parseInt(params.id)
+    const { id } = await params
+    const userId = parseInt(id)
     if (isNaN(userId)) {
       return NextResponse.json(
         { error: 'ID de usuario inválido' },

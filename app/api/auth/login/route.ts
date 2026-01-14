@@ -137,19 +137,23 @@ export async function POST(request: NextRequest) {
         name: user.name,
         role: user.role
       },
-      redirectUrl
+      redirectUrl,
+      sessionDuration: rememberMe ? '30 días' : '8 horas',
+      rememberMe: rememberMe
     })
 
     // Establecer cookie con el token
     // Si rememberMe es true, la sesión dura 30 días, sino 8 horas
     const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 8 // 30 días o 8 horas
     console.log('Cookie maxAge:', maxAge, 'seconds (', maxAge / 3600, 'hours )')
+    console.log('Setting cookie with rememberMe:', rememberMe)
     
     response.cookies.set('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge
+      maxAge,
+      path: '/' // Asegurar que la cookie esté disponible en toda la aplicación
     })
 
     // Resetear rate limit en login exitoso

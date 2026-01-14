@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import PasswordResetRequests from './PasswordResetRequests'
 
 interface User {
   id: number
@@ -12,6 +13,7 @@ interface User {
 }
 
 export default function UsersManager() {
+  const [activeSubTab, setActiveSubTab] = useState<'users' | 'password-reset'>('users')
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -202,19 +204,58 @@ export default function UsersManager() {
           <h2 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h2>
           <p className="text-sm text-gray-600 mt-1">Administra los usuarios del sistema</p>
         </div>
+        {activeSubTab === 'users' && (
+          <button
+            onClick={handleNewUser}
+            className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Nuevo Usuario
+          </button>
+        )}
+      </div>
+
+      {/* Sub-pestañas */}
+      <div className="flex gap-2 border-b border-gray-200">
         <button
-          onClick={handleNewUser}
-          className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+          onClick={() => setActiveSubTab('users')}
+          className={`px-4 py-3 font-medium transition-all border-b-2 ${
+            activeSubTab === 'users'
+              ? 'border-black text-black'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Nuevo Usuario
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            Usuarios
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveSubTab('password-reset')}
+          className={`px-4 py-3 font-medium transition-all border-b-2 ${
+            activeSubTab === 'password-reset'
+              ? 'border-black text-black'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+            Recuperación de Contraseñas
+          </div>
         </button>
       </div>
 
-      {/* Filtros */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+      {/* Contenido de Usuarios */}
+      {activeSubTab === 'users' && (
+        <>
+          {/* Filtros */}
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
@@ -502,6 +543,11 @@ export default function UsersManager() {
           </div>
         </div>
       )}
+        </>
+      )}
+
+      {/* Contenido de Recuperación de Contraseñas */}
+      {activeSubTab === 'password-reset' && <PasswordResetRequests />}
     </div>
   )
 }
