@@ -199,27 +199,55 @@ export default function SystemConfig() {
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "logo" | "logoLight" | "favicon") => {
     const file = e.target.files?.[0]
     if (file) {
-      const maxSize = 5 * 1024 * 1024
+      const maxSize = 10 * 1024 * 1024
       if (file.size > maxSize) {
-        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 5MB.')
+        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 10MB.')
         return
       }
 
       try {
+        // Comprimir imagen localmente primero
         const compressedImage = await compressImage(file)
+        
+        // Mostrar preview inmediatamente
         if (type === "logo") {
           setLogoPreview(compressedImage)
-          setConfig({ ...config, logo: compressedImage })
         } else if (type === "logoLight") {
           setLogoLightPreview(compressedImage)
-          setConfig({ ...config, logoLight: compressedImage })
         } else {
           setFaviconPreview(compressedImage)
-          setConfig({ ...config, favicon: compressedImage })
+        }
+
+        // Subir a Cloudinary
+        const response = await fetch('/api/upload-cloudinary', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: compressedImage,
+            folder: 'config'
+          }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok && data.success) {
+          // Usar URL de Cloudinary
+          if (type === "logo") {
+            setConfig({ ...config, logo: data.url })
+          } else if (type === "logoLight") {
+            setConfig({ ...config, logoLight: data.url })
+          } else {
+            setConfig({ ...config, favicon: data.url })
+          }
+          alert(`✅ ${type === 'logo' ? 'Logo' : type === 'logoLight' ? 'Logo claro' : 'Favicon'} subido exitosamente a Cloudinary`)
+        } else {
+          throw new Error(data.error || 'Error al subir imagen')
         }
       } catch (error) {
-        console.error('Error comprimiendo imagen:', error)
-        alert('Error al procesar la imagen. Intenta con otra imagen.')
+        console.error('Error subiendo imagen:', error)
+        alert('Error al subir la imagen. Intenta con otra imagen.')
       }
     }
   }
@@ -240,27 +268,55 @@ export default function SystemConfig() {
   const handleAboutImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, imageNumber: 1 | 2 | 3) => {
     const file = e.target.files?.[0]
     if (file) {
-      const maxSize = 5 * 1024 * 1024
+      const maxSize = 10 * 1024 * 1024
       if (file.size > maxSize) {
-        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 5MB.')
+        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 10MB.')
         return
       }
 
       try {
+        // Comprimir imagen localmente primero
         const compressedImage = await compressImage(file)
+        
+        // Mostrar preview inmediatamente
         if (imageNumber === 1) {
           setAboutImage1Preview(compressedImage)
-          setConfig({ ...config, aboutImage1: compressedImage })
         } else if (imageNumber === 2) {
           setAboutImage2Preview(compressedImage)
-          setConfig({ ...config, aboutImage2: compressedImage })
         } else {
           setAboutImage3Preview(compressedImage)
-          setConfig({ ...config, aboutImage3: compressedImage })
+        }
+
+        // Subir a Cloudinary
+        const response = await fetch('/api/upload-cloudinary', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: compressedImage,
+            folder: 'about'
+          }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok && data.success) {
+          // Usar URL de Cloudinary
+          if (imageNumber === 1) {
+            setConfig({ ...config, aboutImage1: data.url })
+          } else if (imageNumber === 2) {
+            setConfig({ ...config, aboutImage2: data.url })
+          } else {
+            setConfig({ ...config, aboutImage3: data.url })
+          }
+          alert(`✅ Imagen ${imageNumber} de About subida exitosamente a Cloudinary`)
+        } else {
+          throw new Error(data.error || 'Error al subir imagen')
         }
       } catch (error) {
-        console.error('Error comprimiendo imagen:', error)
-        alert('Error al procesar la imagen. Intenta con otra imagen.')
+        console.error('Error subiendo imagen:', error)
+        alert('Error al subir la imagen. Intenta con otra imagen.')
       }
     }
   }
