@@ -139,21 +139,43 @@ export default function VideosManager() {
   const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const maxSize = 5 * 1024 * 1024
+      const maxSize = 10 * 1024 * 1024
       if (file.size > maxSize) {
-        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 5MB.')
+        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 10MB.')
         return
       }
 
       try {
+        // Comprimir imagen localmente primero
         const compressedImage = await compressImage(file)
         setThumbnailPreview(compressedImage)
-        if (editingVideo) {
-          setEditingVideo({ ...editingVideo, thumbnail: compressedImage })
+
+        // Subir a Cloudinary
+        const response = await fetch('/api/upload-cloudinary', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: compressedImage,
+            folder: 'videos'
+          }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok && data.success) {
+          // Usar URL de Cloudinary
+          if (editingVideo) {
+            setEditingVideo({ ...editingVideo, thumbnail: data.url })
+          }
+          alert('✅ Thumbnail subido exitosamente a Cloudinary')
+        } else {
+          throw new Error(data.error || 'Error al subir thumbnail')
         }
       } catch (error) {
-        console.error('Error comprimiendo imagen:', error)
-        alert('Error al procesar la imagen. Intenta con otra imagen.')
+        console.error('Error subiendo thumbnail:', error)
+        alert('Error al subir el thumbnail. Intenta con otra imagen.')
       }
     }
   }

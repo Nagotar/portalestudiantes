@@ -164,19 +164,41 @@ export default function CoursesManager() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const maxSize = 5 * 1024 * 1024
+      const maxSize = 10 * 1024 * 1024
       if (file.size > maxSize) {
-        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 5MB.')
+        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 10MB.')
         return
       }
 
       try {
+        // Comprimir imagen localmente primero
         const compressedImage = await compressImage(file)
         setImagePreview(compressedImage)
-        setFormData({ ...formData, image: compressedImage })
+
+        // Subir a Cloudinary
+        const response = await fetch('/api/upload-cloudinary', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: compressedImage,
+            folder: 'courses'
+          }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok && data.success) {
+          // Usar URL de Cloudinary
+          setFormData({ ...formData, image: data.url })
+          alert('✅ Imagen subida exitosamente a Cloudinary')
+        } else {
+          throw new Error(data.error || 'Error al subir imagen')
+        }
       } catch (error) {
-        console.error('Error comprimiendo imagen:', error)
-        alert('Error al procesar la imagen. Intenta con otra imagen.')
+        console.error('Error subiendo imagen:', error)
+        alert('Error al subir la imagen. Intenta con otra imagen.')
       }
     }
   }

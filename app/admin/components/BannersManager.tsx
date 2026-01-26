@@ -22,6 +22,7 @@ interface CompanyLogo {
   logo: string
   active: boolean
   displayOrder?: number
+  cloudinaryPublicId?: string
 }
 
 export default function BannersManager() {
@@ -311,20 +312,46 @@ export default function BannersManager() {
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && editingCompany) {
-      // Validar tamaño de archivo (máximo 5MB antes de comprimir)
-      const maxSize = 5 * 1024 * 1024
+      // Validar tamaño de archivo (máximo 10MB)
+      const maxSize = 10 * 1024 * 1024
       if (file.size > maxSize) {
-        alert('El logo es demasiado grande. Por favor, selecciona una imagen menor a 5MB.')
+        alert('El logo es demasiado grande. Por favor, selecciona una imagen menor a 10MB.')
         return
       }
 
       try {
+        // Comprimir imagen localmente primero
         const compressedImage = await compressImage(file)
         setLogoPreview(compressedImage)
-        setEditingCompany({ ...editingCompany, logo: compressedImage })
+
+        // Subir a Cloudinary
+        const response = await fetch('/api/upload-cloudinary', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: compressedImage,
+            folder: 'logos'
+          }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok && data.success) {
+          // Usar URL de Cloudinary
+          setEditingCompany({ 
+            ...editingCompany, 
+            logo: data.url,
+            cloudinaryPublicId: data.publicId
+          })
+          alert('✅ Logo subido exitosamente a Cloudinary')
+        } else {
+          throw new Error(data.error || 'Error al subir logo')
+        }
       } catch (error) {
-        console.error('Error comprimiendo logo:', error)
-        alert('Error al procesar el logo. Intenta con otra imagen.')
+        console.error('Error subiendo logo:', error)
+        alert('Error al subir el logo. Intenta con otra imagen.')
       }
     }
   }
