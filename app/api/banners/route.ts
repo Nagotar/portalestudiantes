@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
       useImage: row.use_image === 1,
       active: row.active === 1,
       displayOrder: row.display_order,
+      cloudinaryPublicId: row.cloudinary_public_id,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }))
@@ -82,7 +83,8 @@ export async function POST(request: NextRequest) {
       image,
       useImage,
       active,
-      displayOrder
+      displayOrder,
+      cloudinaryPublicId
     } = body
 
     // Validar campos requeridos
@@ -96,8 +98,8 @@ export async function POST(request: NextRequest) {
     // Insertar banner en la base de datos
     const result = await db.execute({
       sql: `INSERT INTO banners (
-        title, subtitle, description, gradient, icon, image, use_image, active, display_order
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        title, subtitle, description, gradient, icon, image, use_image, active, display_order, cloudinary_public_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         title,
         subtitle,
@@ -107,7 +109,8 @@ export async function POST(request: NextRequest) {
         image || null,
         useImage ? 1 : 0,
         active !== false ? 1 : 0,
-        displayOrder || 0
+        displayOrder || 0,
+        cloudinaryPublicId || null
       ]
     })
 
@@ -133,6 +136,7 @@ export async function POST(request: NextRequest) {
         useImage: banner.use_image === 1,
         active: banner.active === 1,
         displayOrder: banner.display_order,
+        cloudinaryPublicId: banner.cloudinary_public_id,
         createdAt: banner.created_at,
         updatedAt: banner.updated_at
       }

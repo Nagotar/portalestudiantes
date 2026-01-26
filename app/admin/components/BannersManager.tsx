@@ -13,6 +13,7 @@ interface Banner {
   image?: string
   useImage: boolean
   displayOrder?: number
+  cloudinaryPublicId?: string
 }
 
 interface CompanyLogo {
@@ -134,20 +135,47 @@ export default function BannersManager() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && editingBanner) {
-      // Validar tamaño de archivo (máximo 5MB antes de comprimir)
-      const maxSize = 5 * 1024 * 1024
+      // Validar tamaño de archivo (máximo 10MB)
+      const maxSize = 10 * 1024 * 1024
       if (file.size > maxSize) {
-        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 5MB.')
+        alert('La imagen es demasiado grande. Por favor, selecciona una imagen menor a 10MB.')
         return
       }
 
       try {
+        // Comprimir imagen localmente primero
         const compressedImage = await compressImage(file)
         setImagePreview(compressedImage)
-        setEditingBanner({ ...editingBanner, image: compressedImage, useImage: true })
+
+        // Subir a Cloudinary
+        const response = await fetch('/api/upload-cloudinary', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: compressedImage,
+            folder: 'banners'
+          }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok && data.success) {
+          // Usar URL de Cloudinary
+          setEditingBanner({ 
+            ...editingBanner, 
+            image: data.url,
+            cloudinaryPublicId: data.publicId,
+            useImage: true 
+          })
+          alert('✅ Imagen subida exitosamente a Cloudinary')
+        } else {
+          throw new Error(data.error || 'Error al subir imagen')
+        }
       } catch (error) {
-        console.error('Error comprimiendo imagen:', error)
-        alert('Error al procesar la imagen. Intenta con otra imagen.')
+        console.error('Error subiendo imagen:', error)
+        alert('Error al subir la imagen. Intenta con otra imagen.')
       }
     }
   }
@@ -466,13 +494,13 @@ export default function BannersManager() {
             <div className="flex items-start gap-4">
               {/* Preview */}
               <div className={`w-32 h-20 rounded-lg flex-shrink-0 relative overflow-hidden ${
-                banner.useImage && banner.image ? '' : `bg-gradient-to-br ${banner.gradient}`
+                banner.useImage && banner.image ? 'bg-gray-100' : `bg-gradient-to-br ${banner.gradient}`
               }`}>
                 {banner.useImage && banner.image ? (
                   <img 
                     src={banner.image} 
                     alt={banner.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 ) : (
                   <>
@@ -702,11 +730,11 @@ export default function BannersManager() {
                   <div className="space-y-3">
                     {/* Image Preview */}
                     {imagePreview && (
-                      <div className="relative w-full h-48 rounded-lg overflow-hidden border-2 border-gray-200">
+                      <div className="relative w-full h-48 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-100">
                         <img
                           src={imagePreview}
                           alt="Preview"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                         />
                         <button
                           type="button"

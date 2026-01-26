@@ -448,15 +448,15 @@ export default function Home() {
                       : "opacity-0 translate-x-full"
                 }`}
               >
-                <div className={`h-full ${banner.useImage && banner.image ? '' : `bg-gradient-to-br ${banner.gradient}`} flex items-center justify-center relative`}>
+                <div className={`h-full ${banner.useImage && banner.image ? 'bg-gray-900' : `bg-gradient-to-br ${banner.gradient}`} flex items-center justify-center relative`}>
                   {banner.useImage && banner.image ? (
                     <>
                       <img 
                         src={banner.image} 
                         alt={banner.title}
-                        className="absolute inset-0 w-full h-full object-cover object-center"
+                        className="absolute inset-0 w-full h-full object-contain"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/40 to-black/50" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
                     </>
                   ) : (
                     <>

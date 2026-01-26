@@ -33,6 +33,7 @@ export async function GET(
       useImage: row.use_image === 1,
       active: row.active === 1,
       displayOrder: row.display_order,
+      cloudinaryPublicId: row.cloudinary_public_id,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }
@@ -86,7 +87,8 @@ export async function PUT(
       image,
       useImage,
       active,
-      displayOrder
+      displayOrder,
+      cloudinaryPublicId
     } = body
 
     // Verificar que el banner existe
@@ -114,6 +116,7 @@ export async function PUT(
         use_image = ?,
         active = ?,
         display_order = ?,
+        cloudinary_public_id = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?`,
       args: [
@@ -126,6 +129,7 @@ export async function PUT(
         useImage ? 1 : 0,
         active !== false ? 1 : 0,
         displayOrder || 0,
+        cloudinaryPublicId || null,
         parseInt(id)
       ]
     })
@@ -148,6 +152,7 @@ export async function PUT(
       useImage: row.use_image === 1,
       active: row.active === 1,
       displayOrder: row.display_order,
+      cloudinaryPublicId: row.cloudinary_public_id,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }
