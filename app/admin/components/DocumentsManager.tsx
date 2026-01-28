@@ -12,6 +12,7 @@ interface Document {
   fileSize?: number
   downloads: number
   active: boolean
+  cloudinaryPublicId?: string
   createdAt?: string
   updatedAt?: string
 }
@@ -62,7 +63,7 @@ export default function DocumentsManager() {
     setShowModal(true)
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -72,28 +73,56 @@ export default function DocumentsManager() {
       return
     }
 
-    // Validar tamaño (máximo 10MB)
-    const maxSize = 10 * 1024 * 1024
+    // Validar tamaño (máximo 50MB para PDFs)
+    const maxSize = 50 * 1024 * 1024
     if (file.size > maxSize) {
-      alert('El archivo es demasiado grande. Máximo 10MB')
+      alert('El archivo es demasiado grande. Máximo 50MB')
       return
     }
 
-    // Leer archivo como base64
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const result = reader.result as string
-      setFilePreview(result)
-      if (editingDocument) {
-        setEditingDocument({
-          ...editingDocument,
-          fileData: result,
-          fileName: file.name,
-          fileSize: file.size
+    try {
+      // Leer archivo como base64
+      const reader = new FileReader()
+      reader.onloadend = async () => {
+        const result = reader.result as string
+        setFilePreview(result)
+
+        // Subir a Cloudinary
+        const response = await fetch('/api/upload-cloudinary', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            file: result,
+            folder: 'documents',
+            resourceType: 'raw'
+          }),
         })
+
+        const data = await response.json()
+
+        if (response.ok && data.success) {
+          // Usar URL de Cloudinary
+          if (editingDocument) {
+            setEditingDocument({
+              ...editingDocument,
+              fileData: data.url,
+              fileName: file.name,
+              fileSize: file.size,
+              cloudinaryPublicId: data.publicId
+            })
+          }
+          alert('✅ PDF subido exitosamente a Cloudinary')
+        } else {
+          throw new Error(data.error || 'Error al subir PDF')
+        }
       }
+      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error('Error subiendo PDF:', error)
+      alert('Error al subir el PDF. Intenta con otro archivo.')
     }
-    reader.readAsDataURL(file)
   }
 
   const handleSave = async () => {

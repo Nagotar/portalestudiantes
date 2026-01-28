@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
       fileSize: row.file_size,
       downloads: row.downloads || 0,
       active: row.active === 1,
+      cloudinaryPublicId: row.cloudinary_public_id,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }))
@@ -74,7 +75,8 @@ export async function POST(request: NextRequest) {
       fileData,
       fileName,
       fileSize,
-      active
+      active,
+      cloudinaryPublicId
     } = body
 
     // Validar campos requeridos
@@ -88,8 +90,8 @@ export async function POST(request: NextRequest) {
     // Insertar documento en la base de datos
     const result = await db.execute({
       sql: `INSERT INTO documents (
-        title, description, license_type, file_data, file_name, file_size, downloads, active
-      ) VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
+        title, description, license_type, file_data, file_name, file_size, downloads, active, cloudinary_public_id
+      ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)`,
       args: [
         title,
         description,
@@ -97,7 +99,8 @@ export async function POST(request: NextRequest) {
         fileData || null,
         fileName || null,
         fileSize || null,
-        active !== false ? 1 : 0
+        active !== false ? 1 : 0,
+        cloudinaryPublicId || null
       ]
     })
 
@@ -122,6 +125,7 @@ export async function POST(request: NextRequest) {
         fileSize: doc.file_size,
         downloads: doc.downloads,
         active: doc.active === 1,
+        cloudinaryPublicId: doc.cloudinary_public_id,
         createdAt: doc.created_at,
         updatedAt: doc.updated_at
       }

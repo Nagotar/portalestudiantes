@@ -20,24 +20,34 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { image, folder = 'banners' } = body
+    const { file, folder = 'banners', resourceType } = body
 
-    if (!image) {
+    if (!file) {
       return NextResponse.json(
-        { error: 'Imagen requerida' },
+        { error: 'Archivo requerido' },
         { status: 400 }
       )
     }
 
-    // Subir imagen a Cloudinary
-    const uploadResponse = await cloudinary.uploader.upload(image, {
+    // Detectar tipo de recurso (image o raw para PDFs)
+    const detectedResourceType = resourceType || (file.startsWith('data:application/pdf') ? 'raw' : 'image')
+    
+    // Configuración base para la subida
+    const uploadConfig: any = {
       folder: `portalestudiante/${folder}`,
-      resource_type: 'image',
-      transformation: [
+      resource_type: detectedResourceType,
+    }
+
+    // Solo agregar transformaciones para imágenes
+    if (detectedResourceType === 'image') {
+      uploadConfig.transformation = [
         { quality: 'auto:good' },
         { fetch_format: 'auto' }
       ]
-    })
+    }
+
+    // Subir archivo a Cloudinary
+    const uploadResponse = await cloudinary.uploader.upload(file, uploadConfig)
 
     return NextResponse.json({
       success: true,
@@ -45,13 +55,15 @@ export async function POST(request: NextRequest) {
       publicId: uploadResponse.public_id,
       width: uploadResponse.width,
       height: uploadResponse.height,
-      format: uploadResponse.format
+      format: uploadResponse.format,
+      resourceType: uploadResponse.resource_type,
+      bytes: uploadResponse.bytes
     })
 
   } catch (error) {
     console.error('Error subiendo a Cloudinary:', error)
     return NextResponse.json(
-      { error: 'Error al subir imagen' },
+      { error: 'Error al subir archivo' },
       { status: 500 }
     )
   }

@@ -32,6 +32,7 @@ export async function GET(
       fileSize: row.file_size,
       downloads: row.downloads,
       active: row.active === 1,
+      cloudinaryPublicId: row.cloudinary_public_id,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }
@@ -83,7 +84,8 @@ export async function PUT(
       fileData,
       fileName,
       fileSize,
-      active
+      active,
+      cloudinaryPublicId
     } = body
 
     // Verificar que el documento existe
@@ -109,6 +111,7 @@ export async function PUT(
         file_name = ?,
         file_size = ?,
         active = ?,
+        cloudinary_public_id = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?`,
       args: [
@@ -119,6 +122,7 @@ export async function PUT(
         fileName || null,
         fileSize || null,
         active !== false ? 1 : 0,
+        cloudinaryPublicId || null,
         parseInt(id)
       ]
     })
@@ -140,6 +144,7 @@ export async function PUT(
       fileSize: row.file_size,
       downloads: row.downloads,
       active: row.active === 1,
+      cloudinaryPublicId: row.cloudinary_public_id,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }

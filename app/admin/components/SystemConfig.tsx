@@ -225,7 +225,7 @@ export default function SystemConfig() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            image: compressedImage,
+            file: compressedImage,
             folder: 'config'
           }),
         })
@@ -294,7 +294,7 @@ export default function SystemConfig() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            image: compressedImage,
+            file: compressedImage,
             folder: 'about'
           }),
         })

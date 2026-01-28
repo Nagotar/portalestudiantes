@@ -157,7 +157,7 @@ export default function VideosManager() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            image: compressedImage,
+            file: compressedImage,
             folder: 'videos'
           }),
         })

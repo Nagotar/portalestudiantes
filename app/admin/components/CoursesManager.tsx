@@ -182,7 +182,7 @@ export default function CoursesManager() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            image: compressedImage,
+            file: compressedImage,
             folder: 'courses'
           }),
         })

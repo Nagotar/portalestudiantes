@@ -155,7 +155,7 @@ export default function BannersManager() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            image: compressedImage,
+            file: compressedImage,
             folder: 'banners'
           }),
         })
@@ -331,7 +331,7 @@ export default function BannersManager() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            image: compressedImage,
+            file: compressedImage,
             folder: 'logos'
           }),
         })
