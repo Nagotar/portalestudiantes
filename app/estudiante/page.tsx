@@ -33,7 +33,7 @@ interface Evaluation {
 }
 
 export default function EstudianteDashboard() {
-  const [activeTab, setActiveTab] = useState<"cursos" | "evaluaciones" | "progreso">("cursos")
+  const [activeTab, setActiveTab] = useState<"cursos" | "evaluaciones" | "progreso" | "encuestas">("cursos")
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [courses, setCourses] = useState<Course[]>([])
   const [loadingCourses, setLoadingCourses] = useState(true)
@@ -402,6 +402,17 @@ export default function EstudianteDashboard() {
               }`}
             >
               Mi Progreso
+            </button>
+            <button
+              onClick={() => setActiveTab("encuestas")}
+              style={activeTab === "encuestas" ? { borderColor: config?.primaryColor || '#000000' } : {}}
+              className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "encuestas"
+                  ? "text-gray-900"
+                  : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+              }`}
+            >
+              Encuestas
             </button>
           </nav>
 
@@ -805,6 +816,106 @@ export default function EstudianteDashboard() {
                   <div className="inline-flex items-center gap-2 px-6 py-3 bg-white rounded-lg shadow-sm">
                     <span className="text-sm font-medium text-gray-700">Próximo objetivo:</span>
                     <span className="text-sm font-bold text-blue-600">Completar Operador de Excavadoras</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Encuestas Tab */}
+            {activeTab === "encuestas" && (
+              <div className="space-y-6">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Encuestas de Satisfacción</h2>
+                  <p className="text-gray-600">Ayúdanos a mejorar compartiendo tu opinión sobre los cursos</p>
+                </div>
+
+                <div className="grid gap-6">
+                  {/* Encuesta Disponible */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 hover:shadow-xl transition-all">
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-xl font-bold text-gray-900">Encuesta de Satisfacción RC-ES-01</h3>
+                          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">
+                            Disponible
+                          </span>
+                        </div>
+                        <p className="text-gray-700 mb-4">
+                          Evaluación de módulos, instructor, infraestructura y satisfacción general del curso
+                        </p>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            <span>15 preguntas</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>10-15 minutos</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                            <span className="font-medium text-orange-600">Obligatoria</span>
+                          </div>
+                        </div>
+                        <div className="bg-white rounded-lg p-4 mb-4">
+                          <h4 className="font-semibold text-gray-900 mb-2">Secciones:</h4>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <span className="text-gray-700">Módulos y Contenidos</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span className="text-gray-700">Instructor-Expositor</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                              <span className="text-gray-700">Infraestructura</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                              <span className="text-gray-700">Satisfacción General</span>
+                            </div>
+                          </div>
+                        </div>
+                        <Link
+                          href="/estudiante/encuesta/1"
+                          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl"
+                        >
+                          Responder Encuesta
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          </svg>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mensaje informativo */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                    <div className="flex items-start gap-3">
+                      <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <h4 className="font-semibold text-blue-900 mb-1">¿Por qué son importantes las encuestas?</h4>
+                        <p className="text-sm text-blue-800">
+                          Tu opinión nos ayuda a mejorar continuamente la calidad de nuestros cursos, instalaciones y servicios. 
+                          Las encuestas son anónimas y tus respuestas son confidenciales.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
