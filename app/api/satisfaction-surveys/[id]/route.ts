@@ -3,9 +3,10 @@ import { db } from '@/lib/db-utils'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const { title, description, courseId, active, requiredForCertificate, anonymous } = body
 
@@ -21,7 +22,7 @@ export async function PUT(
         active ? 1 : 0,
         requiredForCertificate ? 1 : 0,
         anonymous ? 1 : 0,
-        params.id
+        id
       ]
     })
 
@@ -40,12 +41,13 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await db.execute({
       sql: 'DELETE FROM satisfaction_surveys WHERE id = ?',
-      args: [params.id]
+      args: [id]
     })
 
     return NextResponse.json({
