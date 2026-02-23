@@ -343,7 +343,7 @@ export default function SatisfactionSurveysManager() {
                                 <div className="flex gap-2 items-end h-24">
                                   {[1, 2, 3, 4, 5, 6, 7].map((rating) => {
                                     const count = q.distribution[rating] || 0
-                                    const maxCount = Math.max(...Object.values(q.distribution))
+                                    const maxCount = Math.max(...(Object.values(q.distribution) as number[]))
                                     const height = maxCount > 0 ? (count / maxCount) * 100 : 0
 
                                     return (
