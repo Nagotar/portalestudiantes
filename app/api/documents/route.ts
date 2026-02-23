@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const activeOnly = searchParams.get('active') === 'true'
 
-    let sql = 'SELECT * FROM documents'
+    let sql = 'SELECT id, title, description, license_type, file_name, file_size, downloads, active, cloudinary_public_id, created_at, updated_at FROM documents'
     
     if (activeOnly) {
       sql += ' WHERE active = 1'
@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
       title: row.title,
       description: row.description,
       licenseType: row.license_type,
-      fileData: row.file_data,
       fileName: row.file_name,
       fileSize: row.file_size,
       downloads: row.downloads || 0,
@@ -33,10 +32,12 @@ export async function GET(request: NextRequest) {
       updatedAt: row.updated_at
     }))
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       documents
     })
+    response.headers.set('Cache-Control', 's-maxage=300, stale-while-revalidate=600')
+    return response
 
   } catch (error) {
     console.error('Error obteniendo documentos:', error)

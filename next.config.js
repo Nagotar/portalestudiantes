@@ -2,12 +2,7 @@
 const nextConfig = {
   experimental: {
     serverActions: {
-      bodySizeLimit: '500mb',
-    },
-  },
-  api: {
-    bodyParser: {
-      sizeLimit: '500mb',
+      bodySizeLimit: '50mb',
     },
   },
   async headers() {
@@ -35,6 +30,42 @@ const nextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()'
           }
+        ]
+      },
+      {
+        source: '/api/banners',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' }
+        ]
+      },
+      {
+        source: '/api/courses',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' }
+        ]
+      },
+      {
+        source: '/api/documents',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' }
+        ]
+      },
+      {
+        source: '/api/videos',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' }
+        ]
+      },
+      {
+        source: '/api/company-logos',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' }
+        ]
+      },
+      {
+        source: '/api/config',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=120, stale-while-revalidate=300' }
         ]
       }
     ]

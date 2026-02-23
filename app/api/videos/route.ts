@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db-utils'
 
-// Configuración para aumentar el límite de tamaño del body
 export const runtime = 'nodejs'
 export const maxDuration = 60
-export const dynamic = 'force-dynamic'
 
 // GET /api/videos - Listar videos
 export async function GET(request: NextRequest) {
@@ -58,7 +56,9 @@ export async function GET(request: NextRequest) {
       updatedAt: row.updated_at
     }))
 
-    return NextResponse.json({ videos })
+    const response = NextResponse.json({ videos })
+    response.headers.set('Cache-Control', 's-maxage=300, stale-while-revalidate=600')
+    return response
   } catch (error: any) {
     console.error('Error fetching videos:', error)
     return NextResponse.json(

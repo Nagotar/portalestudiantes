@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db-utils'
 import { getUserFromRequest } from '@/lib/auth'
 
-// Configuración para aumentar el límite de tamaño del body
 export const runtime = 'nodejs'
-export const maxDuration = 60 // 60 segundos máximo
-export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 // Caché en memoria del servidor (persiste entre requests)
 let serverConfigCache: any = null

@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db-utils'
 import { getUserFromRequest } from '@/lib/auth'
 
-// Configuración para aumentar el límite de tamaño del body
 export const runtime = 'nodejs'
 export const maxDuration = 60
-export const dynamic = 'force-dynamic'
 
 // GET - Listar todos los logos de empresas
 export async function GET(request: NextRequest) {
@@ -33,10 +31,12 @@ export async function GET(request: NextRequest) {
       updatedAt: row.updated_at
     }))
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       logos
     })
+    response.headers.set('Cache-Control', 's-maxage=300, stale-while-revalidate=600')
+    return response
 
   } catch (error) {
     console.error('Error obteniendo logos:', error)
